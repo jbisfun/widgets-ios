@@ -1,0 +1,139 @@
+# Fossify widgets for the iOS home screen. Build with `idl build -c release` (see README.md).
+# The extension is also embedded by fossify-ios/launcher-ios (target WidgetsExtension, dir ../widgets-ios).
+toolchain:
+  sdk_bundle: ~/.swiftpm/swift-sdks/darwin.artifactbundle
+  swiftly_bin: ~/.local/share/swiftly/bin
+  swiftc: swiftc
+  ldid: ldid
+  actool: idl-actool
+  # App Intents metadata (re-appintentsmetadataprocessor): widget configuration and buttons need it.
+  appintents: appintentsmetadataprocessor
+
+defaults:
+  min_ios: "17.0"
+  swift_version: "5.0"
+
+targets:
+  # A small host app: explains how to add the widgets and publishes the apps' data like the launcher does.
+  - name: FossifyWidgets
+    bundle_id: org.fossify.widgets.ios
+    version: "1.0.0"
+    build_number: "1"
+    device_family: "1,2"
+    link: [CalculatorKit, CalendarKit, ClockKit, GalleryKit, MusicPlayerKit, NotesKit, VoiceRecorderKit,
+           FossifyWidgetIntents, FossifyCommons]
+    embed: [WidgetsExtension]
+    sources: [App]
+    resources: [Resources/Assets.xcassets]
+    frameworks: [SwiftUI, UIKit, Foundation, WidgetKit, AppIntents, EventKit, Contacts, UserNotifications, AVFoundation,
+                 AudioToolbox, ActivityKit, Photos, PhotosUI, AVKit, CoreImage, PencilKit, LocalAuthentication,
+                 MediaPlayer, UniformTypeIdentifiers]
+    ldflags: [-weak_framework, AlarmKit]
+    info:
+      CFBundleDisplayName: Fossify Widgets
+      NSCalendarsFullAccessUsageDescription: The calendar widgets show the events of your synced calendars.
+      NSCalendarsUsageDescription: The calendar widgets show the events of your synced calendars.
+      NSContactsUsageDescription: The calendar widgets show the birthdays of your contacts.
+      NSPhotoLibraryUsageDescription: The gallery widget shows a folder of your photos.
+      NSMicrophoneUsageDescription: The record widget records audio.
+      NSAppleMusicUsageDescription: The player widget plays the songs stored on this device.
+      # Player widget buttons keep playing in the background.
+      UIBackgroundModes: [audio]
+      UIApplicationSceneManifest:
+        UIApplicationSupportsMultipleScenes: false
+      UISupportedInterfaceOrientations:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+      UISupportedInterfaceOrientations~ipad:
+        - UIInterfaceOrientationPortrait
+        - UIInterfaceOrientationPortraitUpsideDown
+        - UIInterfaceOrientationLandscapeLeft
+        - UIInterfaceOrientationLandscapeRight
+    # Snapshots shared with the widget extension (renamed to group.<...>.<TEAMID> by re-signing; see
+    # FossifyCommons.AppGroup).
+    entitlements:
+      com.apple.security.application-groups: [group.org.fossify.launcher.ios]
+    configurations:
+      debug:
+        entitlements:
+          get-task-allow: true
+
+  # The WidgetKit extension: a SwiftUI @main WidgetBundle (no -e _NSExtensionMain).
+  - name: WidgetsExtension
+    type: appex
+    bundle_id: org.fossify.widgets.ios.extension
+    version: "1.0.0"
+    build_number: "1"
+    device_family: "1,2"
+    link: [CalculatorKit, FossifyWidgetIntents, FossifyCommons]
+    sources: [Extension]
+    frameworks: [SwiftUI, UIKit, Foundation, WidgetKit, AppIntents]
+    info:
+      CFBundleDisplayName: Fossify Widgets
+      NSExtension:
+        NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      com.apple.security.application-groups: [group.org.fossify.launcher.ios]
+
+  # App Intents run in the app process (music controls, recording), linked by the app and the extension.
+  - name: FossifyWidgetIntents
+    type: static
+    link: [FossifyCommons]
+    sources: [Shared]
+    frameworks: [Foundation, AppIntents]
+
+  - name: CalculatorKit
+    type: static
+    dir: ../calculator-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation]
+
+  - name: CalendarKit
+    type: static
+    dir: ../calendar-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, EventKit, Contacts, UserNotifications]
+
+  - name: ClockKit
+    type: static
+    dir: ../clock-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, UserNotifications, AVFoundation, AudioToolbox, ActivityKit]
+
+  - name: GalleryKit
+    type: static
+    dir: ../gallery-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, Photos, PhotosUI, AVKit, AVFoundation, CoreImage, PencilKit, LocalAuthentication]
+
+  - name: MusicPlayerKit
+    type: static
+    dir: ../music-player-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, AVFoundation, MediaPlayer]
+
+  - name: NotesKit
+    type: static
+    dir: ../notes-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, LocalAuthentication, UniformTypeIdentifiers]
+
+  - name: VoiceRecorderKit
+    type: static
+    dir: ../voice-recorder-ios
+    link: [FossifyCommons]
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation, AVFoundation]
+
+  - name: FossifyCommons
+    type: static
+    dir: ../commons-ios
+    sources: [Sources]
+    frameworks: [SwiftUI, UIKit, Foundation]

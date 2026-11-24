@@ -1,0 +1,3 @@
+build/
+.idl/
+compile_commands.json
